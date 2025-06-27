@@ -55,8 +55,12 @@ public class XLSXtoJavaClass {
             String orig = s;
             boolean alt = false;
 
+            String field = toLatin.translate(s);
+
             if (s.contains(" ")) {
                 s = s.replace(' ', '_');
+                alt = true;
+            } else if (!field.equals(orig)) {
                 alt = true;
             }
 
@@ -64,8 +68,6 @@ public class XLSXtoJavaClass {
                 out.println();
                 out.println("@AlternateTitle(\"" + orig + "\")");
             }
-
-            String field = toLatin.translate(s);
 
             if (!field.isEmpty()) field = field.substring(0,1).toLowerCase() + field.substring(1);
             else field = "no_name";
