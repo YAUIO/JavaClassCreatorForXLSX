@@ -55,12 +55,14 @@ public class XLSXtoJavaClass {
             String orig = s;
             boolean alt = false;
 
-            String field = toLatin.translate(s);
-
             if (s.contains(" ")) {
                 s = s.replace(' ', '_');
                 alt = true;
-            } else if (!field.equals(orig)) {
+            }
+
+            String field = toLatin.translate(s);
+
+            if (!field.equals(orig)) {
                 alt = true;
             }
 
