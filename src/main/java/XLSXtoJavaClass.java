@@ -2,11 +2,14 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import ru.homyakin.iuliia.Schemas;
+import ru.homyakin.iuliia.Translator;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.Locale;
 
 
 public class XLSXtoJavaClass {
@@ -15,6 +18,7 @@ public class XLSXtoJavaClass {
         System.out.println("Started generating Java class");
         FileInputStream file = null;
         Workbook sourceBook = null;
+        Translator toLatin = new Translator(Schemas.WIKIPEDIA);
 
         FileOutputStream outStream = null;
         PrintWriter out = null;
@@ -61,7 +65,12 @@ public class XLSXtoJavaClass {
                 out.println("@AlternateTitle(\"" + orig + "\")");
             }
 
-            out.println("public String " + s + ";");
+            String field = toLatin.translate(s);
+
+            if (!field.isEmpty()) field = field.substring(0,1).toLowerCase() + field.substring(1);
+            else field = "no_name";
+
+            out.println("public String " + field + ";");
             i++;
         }
 
