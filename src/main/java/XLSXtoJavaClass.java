@@ -1,14 +1,12 @@
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import ru.homyakin.iuliia.Schemas;
 import ru.homyakin.iuliia.Translator;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Locale;
 
 
@@ -25,6 +23,33 @@ public class XLSXtoJavaClass {
         File table = null;
         try {
             file = new FileInputStream(args[0]);
+
+            if (args[0].endsWith(".csv")) {
+                String xlsx = args[0].replace(".csv", ".xlsx");
+                try (FileOutputStream fos = new FileOutputStream(xlsx); Workbook outwb = new XSSFWorkbook()) {
+                    Sheet sheet = outwb.createSheet("Sheet 1");
+
+                    try (FileInputStream fis = new FileInputStream(args[0]); BufferedReader br = new BufferedReader(new InputStreamReader(fis))) {
+                        String line;
+                        int r = 0;
+                        while ((line = br.readLine()) != null) {
+                            Row row = sheet.createRow(r);
+                            String[] cells = line.split(",");
+                            for (int c = 0; c < cells.length; c++)
+                                row.createCell(c).setCellValue(cells[c]);
+                            r++;
+                        }
+                    }
+
+                    outwb.write(fos);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+                file.close();
+                file = new FileInputStream(xlsx);
+            }
+
             sourceBook = new XSSFWorkbook(file);
 
             table = new File(args[0].substring(0,args[0].lastIndexOf(".")) + ".java");
