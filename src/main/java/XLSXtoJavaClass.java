@@ -12,7 +12,10 @@ import java.util.Locale;
 
 public class XLSXtoJavaClass {
     public static void main(String[] args) {
-        System.out.println("Example usage: XLSXtoJavaClass <[string] input file> <[@nullable int] sheet index");
+        System.out.println("Example usage: XLSXtoJavaClass <[string] input file> <[@nullable int] sheet index> -csharp");
+
+        final boolean csharp = args[args.length - 1].equals("-csharp");
+
         System.out.println("Started generating Java class");
         FileInputStream file = null;
         Workbook sourceBook = null;
@@ -52,7 +55,7 @@ public class XLSXtoJavaClass {
 
             sourceBook = new XSSFWorkbook(file);
 
-            table = new File(args[0].substring(0,args[0].lastIndexOf(".")) + ".java");
+            table = new File(args[0].substring(0,args[0].lastIndexOf(".")) + (csharp ? ".cs" : ".java"));
             if (table.exists()) throw new RuntimeException();
             System.out.println("Output: " + table.getAbsolutePath());
 
@@ -64,7 +67,7 @@ public class XLSXtoJavaClass {
 
         Sheet sourceSheet = null;
 
-        if (args.length == 2) {
+        if ((args.length == 2 && !csharp) || args.length == 3) {
             sourceSheet = sourceBook.getSheetAt(Integer.parseInt(args[1]));
         } else {
             sourceSheet = sourceBook.getSheetAt(0);
@@ -72,7 +75,10 @@ public class XLSXtoJavaClass {
 
         Row header = sourceSheet.getRow(0);
 
-        out.println("public class " + table.getName().substring(0, table.getName().lastIndexOf(".")) + " {");
+        if (csharp)
+            out.println("public class " + table.getName().substring(0, table.getName().lastIndexOf(".")) + "\n{");
+        else
+            out.println("public class " + table.getName().substring(0, table.getName().lastIndexOf(".")) + " {");
 
         int i = 0;
         while (i < header.getPhysicalNumberOfCells() || header.getCell(i) != null) {
@@ -81,11 +87,30 @@ public class XLSXtoJavaClass {
             boolean alt = false;
 
             if (s.contains(" ")) {
-                s = s.replace(' ', '_');
+                s = s.replace(" ", "");
+                alt = true;
+            }
+            if (s.contains("\\")) {
+                s = s.replace("\\", "");
+                alt = true;
+            }
+            if (s.contains("/")) {
+                s = s.replace("/", "");
+                alt = true;
+            }
+            if (s.contains("(")) {
+                s = s.replace("(", "");
+                alt = true;
+            }
+            if (s.contains(")")) {
+                s = s.replace(")", "");
                 alt = true;
             }
 
             String field = toLatin.translate(s);
+
+            if (csharp)
+                field = field.substring(0, 1).toUpperCase() + field.substring(1).toLowerCase();
 
             if (!field.equals(orig)) {
                 alt = true;
@@ -93,13 +118,20 @@ public class XLSXtoJavaClass {
 
             if (alt) {
                 out.println();
-                out.println("@AlternateTitle(\"" + orig + "\")");
+                if (csharp)
+                    out.println("[AlternateTitle(\"" + orig + "\")]");
+                else
+                    out.println("@AlternateTitle(\"" + orig + "\")");
             }
 
-            if (!field.isEmpty()) field = field.substring(0,1).toLowerCase() + field.substring(1);
-            else field = "no_name";
+            if (!csharp)
+                if (!field.isEmpty()) field = field.substring(0,1).toLowerCase() + field.substring(1);
 
-            out.println("public String " + field + ";");
+            if (csharp) {
+                out.println("public string " + field + " { get; set; }");
+            }
+            else
+                out.println("public String " + field + ";");
             i++;
         }
 
